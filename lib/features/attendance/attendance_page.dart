@@ -71,6 +71,10 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     if (state == AppLifecycleState.resumed) {
       _initCamera();
       _startGps();
+    } else if (state == AppLifecycleState.paused) {
+      _cameraController?.dispose();
+      _cameraController = null;
+      _cameraReady = false;
     }
   }
 
@@ -152,6 +156,14 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   Future<void> _initCamera() async {
     try {
+      await _cameraController?.dispose();
+      if (mounted) {
+        setState(() {
+          _cameraController = null;
+          _cameraReady = false;
+        });
+      }
+
       final cameras = await availableCameras();
       CameraDescription? front;
       for (final camera in cameras) {
@@ -175,7 +187,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         controller.dispose();
         return;
       }
-      await _cameraController?.dispose();
       setState(() {
         _cameraController = controller;
         _cameraReady = true;
@@ -312,6 +323,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       setState(() {
         _capturedBytes = null;
       });
+      await _initCamera();
       _load();
     } catch (error) {
       if (!mounted) return;
